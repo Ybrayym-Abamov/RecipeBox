@@ -1,7 +1,8 @@
 from django.shortcuts import render, reverse, HttpResponseRedirect, HttpResponse
 from recipes.models import RecipeItem, Author
-from recipes.forms import RecipesAddForm, AuthorAddForm, LoginForm
+from recipes.forms import RecipesAddForm, AuthorAddForm, LoginForm, EditRecipeForm
 from django.contrib.auth.decorators import login_required
+from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.models import User
 
@@ -44,6 +45,31 @@ def recipesadd(request):
     form = RecipesAddForm()
     return render(request, html, {"form": form})
 
+
+@login_required
+@staff_member_required
+def editrecipeform(request, id):
+    recipe = RecipeItem.objects.get(id=id)
+    if request.method == "POST":
+        form = EditRecipeForm(request.POST)
+        if form.is_valid():
+            data = form.cleaned_data
+            recipe.title = data['title']
+            recipe.author = data['author']
+            recipe.description = data['description']
+            recipe.time_required = data['time_required']
+            recipe.instructions = data['instructions']
+            recipe.save()
+            return HttpResponseRedirect(reverse('recipe_view', args=(id, )))
+    form = EditRecipeForm(initial={
+        'title': recipe.title,
+        'author': recipe.author.id,
+        'description': recipe.description,
+        'time_required': recipe.time_required,
+        'instructions': recipe.instructions
+    })
+    return render(request, 'generic_form.html', {"form": form})
+
 @login_required
 def authoradd(request):
     html = "generic_form.html"
@@ -68,3 +94,45 @@ def author_view(request, id):
     author = Author.objects.get(id=id)
     recipes = RecipeItem.objects.filter(author=author)
     return render(request, "bio.html", {"info": author, "recipes": recipes})
+
+
+@login_required
+def favorites_view(request, id):
+    html = 'favorites.html'
+    data = Author.objects.get(id=id)
+    context = {
+        'data': data
+    }
+    return render(request, html, context)
+
+
+@login_required
+def add_favorite(request, id):
+    recipe = RecipeItem.objects.get(id=id)
+    request.user.author_view.favorites_view.add(recipe)
+    return HttpResponseRedirect(reverse('recipe_view', kwargs={'id': id}))
+
+
+@login_required
+def del_favorite(request, id):
+    recipe = RecipeItem.objects.get(id=id)
+    request.user.author_view.favorites_view.remove(recipe)
+    return HttpResponseRedirect(reverse('recipe_view', kwargs={'id': id}))
+
+
+def recipe(request, id):
+    recipe = RecipeItem.objects.get(id=id)
+    if request.user.is_authenticated:
+        if recipe in request.user.author.favorites_view.all():
+            in_favorites = True
+        else:
+            in_favorites = False
+        return render(
+            request,
+            'recipe.html',
+            {'recipe': recipe, 'in_favorites': in_favorites})
+    else:
+        return render(
+            request,
+            'recipe.html',
+            {'recipe': recipe})

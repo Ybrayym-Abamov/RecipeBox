@@ -6,7 +6,16 @@
         <a href="/author/{{recipe.id}}/">
             <p>{{recipe.author}}</p>
         </a>
+        <a href="/recipe/edit/{{recipe.id}}/"><p>Edit Recipe</p></a>
     </li>
  </ul>
+
+ {% if request.user.is_authenticated %}
+    {% if not in_favorites %}
+        <a href='/favorite/add/{{ recipe.id }}'>Add To Favorites</a>
+    {% else %}
+        <a href='/favorite/remove/{{ recipe.id }}'>Remove From Favorites</a>
+    {% endif %}
+{% endif %}
 
     <a href="/">Home</a>
