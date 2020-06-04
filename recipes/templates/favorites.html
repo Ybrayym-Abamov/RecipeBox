@@ -1,9 +1,6 @@
   
 <h1><a href='/'>HOME</a></h1>
 
-
-{{ author.name }} Favorite's List
-
     {% for foo in data.favorites.all %}
         <li>
             <a href='/recipe/{{foo.id}}/'>

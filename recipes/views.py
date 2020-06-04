@@ -109,30 +109,26 @@ def favorites_view(request, id):
 @login_required
 def add_favorite(request, id):
     recipe = RecipeItem.objects.get(id=id)
-    request.user.author_view.favorites_view.add(recipe)
+    request.user.author.favorites.add(recipe)
     return HttpResponseRedirect(reverse('recipe_view', kwargs={'id': id}))
 
 
 @login_required
 def del_favorite(request, id):
     recipe = RecipeItem.objects.get(id=id)
-    request.user.author_view.favorites_view.remove(recipe)
+    request.user.author.favorites.remove(recipe)
     return HttpResponseRedirect(reverse('recipe_view', kwargs={'id': id}))
 
 
 def recipe(request, id):
+    html = 'recipe.html'
     recipe = RecipeItem.objects.get(id=id)
     if request.user.is_authenticated:
-        if recipe in request.user.author.favorites_view.all():
+        if recipe in request.user.name.favorites.all():
             in_favorites = True
         else:
             in_favorites = False
-        return render(
-            request,
-            'recipe.html',
-            {'recipe': recipe, 'in_favorites': in_favorites})
+        return render(request, html, {'recipe': recipe,
+                                      'in_favorites': in_favorites})
     else:
-        return render(
-            request,
-            'recipe.html',
-            {'recipe': recipe})
+        return render(request, 'recipe.html', {'recipe': recipe})
